@@ -1,0 +1,12 @@
+@font-face {
+    font-family: 'fira_sanslight';
+    src: url('FiraSans-light.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'fira_sansmedium';
+    src: url('FiraSans-medium.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}
