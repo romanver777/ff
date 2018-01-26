@@ -111,7 +111,6 @@
   position: relative;
   border-top: 1px solid #f0f0f0;
   border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
   list-style-type: none; }
   .list__item:hover {
     background-color: #f0f0f0; }
@@ -143,6 +142,7 @@
   background: url("../img/icon-plus.png") no-repeat;
   min-width: 16px;
   min-height: 16px;
+  cursor: pointer;
   position: absolute;
   right: 7px;
   top: 50%; }

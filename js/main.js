@@ -70,7 +70,7 @@ list.addEventListener('click', function (e) {
     e.stopImmediatePropagation();
 
     if (e.target.id) {
-        if (leftFilterInput.value) {
+
             friends = friends.filter(function (el) {
 
                 if (el.id != e.target.id) {
@@ -84,23 +84,19 @@ list.addEventListener('click', function (e) {
             list.innerHTML = '';
             addedList.innerHTML = '';
 
+        if (leftFilterInput.value) {
+            filterShow(friends, leftFilterInput.value, list, 'leftCol');
+            showFriends(addedFriendsArr, 'rightCol');
+        }
+        if (rightFilterInput.value) {
+            showFriends(friends, 'leftCol');
+            filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
+        }
+        if (leftFilterInput.value && rightFilterInput.value) {
             filterShow(friends, leftFilterInput.value, list, 'leftCol');
             filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
-        } else {
-
-            friends = friends.filter(function (el) {
-
-                if (el.id != e.target.id) {
-                    return true;
-                }
-                addedFriendsArr.push(el);
-
-                return false;
-            });
-
-            list.innerHTML = '';
-            addedList.innerHTML = '';
-
+        }
+        if (!leftFilterInput.value && !rightFilterInput.value) {
             showFriends(friends, 'leftCol');
             showFriends(addedFriendsArr, 'rightCol');
         }
@@ -112,7 +108,6 @@ addedList.addEventListener('click', function (e) {
     e.stopImmediatePropagation();
 
     if (e.target.id) {
-        if (rightFilterInput.value) {
             addedFriendsArr = addedFriendsArr.filter(function (el) {
 
                 if (el.id != e.target.id) {
@@ -126,22 +121,19 @@ addedList.addEventListener('click', function (e) {
             list.innerHTML = '';
             addedList.innerHTML = '';
 
+        if (rightFilterInput.value) {
+            showFriends(friends, 'leftCol');
+            filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
+        }
+        if (leftFilterInput.value) {
+            filterShow(friends, leftFilterInput.value, list, 'leftCol');
+            showFriends(addedFriendsArr, 'rightCol');
+        }
+        if (leftFilterInput.value && rightFilterInput.value) {
             filterShow(friends, leftFilterInput.value, list, 'leftCol');
             filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
-        } else {
-            addedFriendsArr = addedFriendsArr.filter(function (el) {
-
-                if (el.id != e.target.id) {
-                    return true;
-                }
-                friends.push(el);
-
-                return false;
-            });
-
-            list.innerHTML = '';
-            addedList.innerHTML = '';
-
+        }
+        if (!leftFilterInput.value && !rightFilterInput.value) {
             showFriends(friends, 'leftCol');
             showFriends(addedFriendsArr, 'rightCol');
         }
@@ -186,15 +178,17 @@ rightFilterInput.addEventListener('keyup', () => {
 
 function filterShow(array, inputValue, elem, indexCol) {
     let resultArr = [];
-
-    array.forEach((el) => {
-        if (isMatching(el.first_name, inputValue) || isMatching(el.last_name, inputValue)) resultArr.push(el);
-    });
-    if (resultArr.length) {
-        elem.innerHTML = '';
-        showFriends(resultArr, indexCol);
-    } else {
-        elem.innerHTML = '';
+    if (inputValue) {
+        array.forEach((el) => {
+            let fullName = `${el.first_name} ${el.last_name}`;
+            if (isMatching(fullName, inputValue)) resultArr.push(el);
+        });
+        if (resultArr.length) {
+            elem.innerHTML = '';
+            showFriends(resultArr, indexCol);
+        } else {
+            elem.innerHTML = '';
+        }
     }
 }
 
@@ -221,13 +215,13 @@ function showFriends(friends, key) {
         divName.className = 'name';
 
         if (key === 'leftCol') {
-            li.className = 'list__item list__item_add';
+            li.className = 'list__item list__item_add draggable';
             a.className = 'link add-link';
 
             list.appendChild(li);
         }
         if (key === 'rightCol') {
-            li.className = 'list__item list__item_remove';
+            li.className = 'list__item list__item_remove draggable';
             a.className = 'link remove-link';
 
             addedList.appendChild(li);
