@@ -70,36 +70,7 @@ list.addEventListener('click', function (e) {
     e.stopImmediatePropagation();
 
     if (e.target.id) {
-
-            friends = friends.filter(function (el) {
-
-                if (el.id != e.target.id) {
-                    return true;
-                }
-                addedFriendsArr.push(el);
-
-                return false;
-            });
-
-            list.innerHTML = '';
-            addedList.innerHTML = '';
-
-        if (leftFilterInput.value) {
-            filterShow(friends, leftFilterInput.value, list, 'leftCol');
-            showFriends(addedFriendsArr, 'rightCol');
-        }
-        if (rightFilterInput.value) {
-            showFriends(friends, 'leftCol');
-            filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
-        }
-        if (leftFilterInput.value && rightFilterInput.value) {
-            filterShow(friends, leftFilterInput.value, list, 'leftCol');
-            filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
-        }
-        if (!leftFilterInput.value && !rightFilterInput.value) {
-            showFriends(friends, 'leftCol');
-            showFriends(addedFriendsArr, 'rightCol');
-        }
+        addToAddedList(e.target.id);
     }
 });
 
@@ -108,35 +79,7 @@ addedList.addEventListener('click', function (e) {
     e.stopImmediatePropagation();
 
     if (e.target.id) {
-            addedFriendsArr = addedFriendsArr.filter(function (el) {
-
-                if (el.id != e.target.id) {
-                    return true;
-                }
-                friends.push(el);
-
-                return false;
-            });
-
-            list.innerHTML = '';
-            addedList.innerHTML = '';
-
-        if (rightFilterInput.value) {
-            showFriends(friends, 'leftCol');
-            filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
-        }
-        if (leftFilterInput.value) {
-            filterShow(friends, leftFilterInput.value, list, 'leftCol');
-            showFriends(addedFriendsArr, 'rightCol');
-        }
-        if (leftFilterInput.value && rightFilterInput.value) {
-            filterShow(friends, leftFilterInput.value, list, 'leftCol');
-            filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
-        }
-        if (!leftFilterInput.value && !rightFilterInput.value) {
-            showFriends(friends, 'leftCol');
-            showFriends(addedFriendsArr, 'rightCol');
-        }
+        returnFromAddedList(e.target.id);
     }
 });
 
@@ -175,6 +118,247 @@ rightFilterInput.addEventListener('keyup', () => {
         }
     }
 });
+
+let DragManager = new function() {
+
+    /**
+     * составной объект для хранения информации о переносе:
+     * {
+   *   elem - элемент, на котором была зажата мышь
+   *   id - цифровое id друга
+   *   avatar - аватар
+   *   downX/downY - координаты, на которых был mousedown
+   *   shiftX/shiftY - относительный сдвиг курсора от угла элемента
+   *   parent - родитель элемента
+   * }
+     */
+    let dragObject = {};
+
+    let self = this;
+
+    function onMouseDown(e) {
+
+        if (e.which != 1) return;
+
+        let elem = e.target.closest('.draggable');
+        if (!elem) return;
+
+        dragObject.elem = elem;
+
+        let id = elem.id;
+
+        dragObject.id = id.slice(3);
+        dragObject.parent = elem.closest('.droppable');
+
+        // запомним, что элемент нажат на текущих координатах pageX/pageY
+        dragObject.downX = e.pageX;
+        dragObject.downY = e.pageY;
+
+        return false;
+    }
+
+    function onMouseMove(e) {
+        if (!dragObject.elem) return; // элемент не зажат
+
+        if (!dragObject.avatar) { // если перенос не начат...
+            let moveX = e.pageX - dragObject.downX;
+            let moveY = e.pageY - dragObject.downY;
+
+            // если мышь передвинулась в нажатом состоянии недостаточно далеко
+            if (Math.abs(moveX) < 3 && Math.abs(moveY) < 3) {
+                return;
+            }
+
+            // начинаем перенос
+            dragObject.avatar = createAvatar(e); // создать аватар
+            if (!dragObject.avatar) { // отмена переноса, нельзя "захватить" за эту часть элемента
+                dragObject = {};
+                return;
+            }
+
+            // аватар создан успешно
+            // создать вспомогательные свойства shiftX/shiftY
+            let coords = getCoords(dragObject.avatar);
+            dragObject.shiftX = dragObject.downX - coords.left;
+            dragObject.shiftY = dragObject.downY - coords.top;
+
+            startDrag(e); // отобразить начало переноса
+        }
+
+        // отобразить перенос объекта при каждом движении мыши
+        dragObject.avatar.style.left = e.pageX - dragObject.shiftX + 'px';
+        dragObject.avatar.style.top = e.pageY - dragObject.shiftY + 'px';
+
+        return false;
+    }
+
+    function onMouseUp(e) {
+        if (dragObject.avatar) { // если перенос идет
+            finishDrag(e);
+        }
+
+        // перенос либо не начинался, либо завершился
+        // в любом случае очистим "состояние переноса" dragObject
+        dragObject = {};
+    }
+
+    function finishDrag(e) {
+        let dropElem = findDroppable(e);
+
+        if (!dropElem) {
+            self.onDragCancel(dragObject);
+        } else {
+            if (dropElem == dragObject.parent) {
+                self.onDragCancel(dragObject);
+            } else {
+                self.onDragEnd(dragObject, dropElem);
+            }
+        }
+    }
+
+    function createAvatar(e) {
+
+        // запомнить старые свойства, чтобы вернуться к ним при отмене переноса
+        let avatar = dragObject.elem;
+        let old = {
+            parent: avatar.parentNode,
+            nextSibling: avatar.nextSibling,
+            position: avatar.position || '',
+            left: avatar.left || '',
+            top: avatar.top || '',
+            zIndex: avatar.zIndex || '',
+            fontSize: avatar.fontSize || ''
+        };
+
+        // функция для отмены переноса
+        avatar.rollback = function() {
+            old.parent.insertBefore(avatar, old.nextSibling);
+            avatar.style.position = old.position;
+            avatar.style.left = old.left;
+            avatar.style.top = old.top;
+            avatar.style.zIndex = old.zIndex;
+            avatar.style.fontSize = old.fontSize;
+        };
+
+        return avatar;
+    }
+
+    function startDrag(e) {
+        let avatar = dragObject.avatar;
+
+        // инициировать начало переноса
+        document.body.appendChild(avatar);
+        avatar.style.zIndex = 9999;
+        avatar.style.position = 'absolute';
+        avatar.style.width = '280px';
+        avatar.style.fontFamily = 'fira_sansmedium, sans-serif';
+        avatar.style.fontSize = '0.75em';
+        avatar.style.fontWeight = 'bold';
+    }
+
+    function findDroppable(event) {
+        // спрячем переносимый элемент
+        dragObject.avatar.hidden = true;
+
+        // получить самый вложенный элемент под курсором мыши
+        let elem = document.elementFromPoint(event.clientX, event.clientY);
+
+        // показать переносимый элемент обратно
+        dragObject.avatar.hidden = false;
+
+        if (elem == null) {
+            // такое возможно, если курсор мыши "вылетел" за границу окна
+            return null;
+        }
+
+        return elem.closest('.droppable');
+    }
+
+    document.onmousemove = onMouseMove;
+    document.onmouseup = onMouseUp;
+    document.onmousedown = onMouseDown;
+
+    this.onDragEnd = function(dragObject, dropElem) {
+        if (dropElem == addedList) {
+            console.log('Это правая колонка');
+            addToAddedList(dragObject.id);
+        }
+        if (dropElem == list) {
+            console.log('Это левая колонка');
+            returnFromAddedList(dragObject.id);
+        }
+        document.body.removeChild(dragObject.avatar);
+        dragObject = {};
+    };
+    this.onDragCancel = function(dragObject) {
+        dragObject.avatar.rollback();
+    };
+
+};
+
+function addToAddedList(id) {
+    friends = friends.filter(function (el) {
+
+        if (el.id != id) {
+            return true;
+        }
+        addedFriendsArr.push(el);
+
+        return false;
+    });
+
+    list.innerHTML = '';
+    addedList.innerHTML = '';
+
+    if (leftFilterInput.value) {
+        filterShow(friends, leftFilterInput.value, list, 'leftCol');
+        showFriends(addedFriendsArr, 'rightCol');
+    }
+    if (rightFilterInput.value) {
+        showFriends(friends, 'leftCol');
+        filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
+    }
+    if (leftFilterInput.value && rightFilterInput.value) {
+        filterShow(friends, leftFilterInput.value, list, 'leftCol');
+        filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
+    }
+    if (!leftFilterInput.value && !rightFilterInput.value) {
+        showFriends(friends, 'leftCol');
+        showFriends(addedFriendsArr, 'rightCol');
+    }
+}
+
+function returnFromAddedList(id) {
+    addedFriendsArr = addedFriendsArr.filter(function (el) {
+
+        if (el.id != id) {
+            return true;
+        }
+        friends.push(el);
+
+        return false;
+    });
+
+    list.innerHTML = '';
+    addedList.innerHTML = '';
+
+    if (rightFilterInput.value) {
+        showFriends(friends, 'leftCol');
+        filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
+    }
+    if (leftFilterInput.value) {
+        filterShow(friends, leftFilterInput.value, list, 'leftCol');
+        showFriends(addedFriendsArr, 'rightCol');
+    }
+    if (leftFilterInput.value && rightFilterInput.value) {
+        filterShow(friends, leftFilterInput.value, list, 'leftCol');
+        filterShow(addedFriendsArr, rightFilterInput.value, addedList, 'rightCol');
+    }
+    if (!leftFilterInput.value && !rightFilterInput.value) {
+        showFriends(friends, 'leftCol');
+        showFriends(addedFriendsArr, 'rightCol');
+    }
+}
 
 function filterShow(array, inputValue, elem, indexCol) {
     let resultArr = [];
@@ -235,4 +419,14 @@ function showFriends(friends, key) {
         li.appendChild(divName);
         li.appendChild(a);
     }
+}
+
+function getCoords(elem) { // кроме IE8-
+    let box = elem.getBoundingClientRect();
+
+    return {
+        top: box.top + pageYOffset,
+        left: box.left + pageXOffset
+    };
+
 }
