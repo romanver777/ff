@@ -1,9 +1,44 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>{{htmlWebpackPlugin.options.title}}</title>
-</head>
-<body>
-</body>
+<html lang="ru-RU">
+  <head>
+    <title>ДругоФИЛЬТР</title>
+    <meta name="description" content="">
+    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <script src="http://vk.com/js/api/openapi.js" type="text/javascript"></script>
+  </head>
 </html>
+<body class="body">
+  <div class="wr">
+    <div class="header">
+      <div class="header__title">Выберите друзей</div><a href="" class="header__link"></a>
+    </div>
+    <div class="content clearfix">
+      <div class="col left-col">
+        <div class="search left-col__search">
+          <input type="text" name="search" placeholder="Начните вводить имя друга" class="search-input left-col__input">
+        </div>
+        <div class="title">Ваши друзья</div>
+        <div class="wr-list">
+          <ul class="list list_border friends-list droppable">
+          </ul>
+        </div>
+      </div>
+      <div class="col right-col">
+        <div class="search right-col__search">
+          <input type="text" name="search" placeholder="Название" class="search-input right-col__input">
+        </div>
+        <div class="title">Друзья в списке</div>
+        <div class="wr-list">
+          <ul class="list list__added droppable"></ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer clearfix">
+      <button class="button">Сохранить</button>
+    </div>
+  </div>
+</body>
+<script src="js/main.js"></script>
